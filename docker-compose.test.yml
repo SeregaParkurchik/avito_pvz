@@ -1,0 +1,17 @@
+version: '3.1'
+
+volumes:
+  postgres_volume:
+
+services:
+  pg-local:
+    image: postgres
+    container_name: test-postgres
+    environment:
+      POSTGRES_USER: testemp
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: test
+    ports:
+      - "5454:5432"
+    volumes:
+      - ./migrations/init_test.sql:/docker-entrypoint-initdb.d/init_test.sql
