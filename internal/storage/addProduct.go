@@ -11,7 +11,6 @@ import (
 )
 
 func (db *AvitoDB) AddProduct(ctx context.Context, product *models.Product) (*models.Product, error) {
-	// 1. Проверяем наличие открытой приемки
 	receptionID, err := db.checkUnclosedReception(ctx, product.PVZID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check unclosed reception: %w", err)
@@ -21,10 +20,8 @@ func (db *AvitoDB) AddProduct(ctx context.Context, product *models.Product) (*mo
 		return nil, errors.New("no open reception found for this PVZ")
 	}
 
-	// 2. Устанавливаем ID приемки для продукта
 	product.ReceptionsID = receptionID
 
-	// 3. Добавляем продукт в базу
 	const query = `
 		INSERT INTO products (id, date_time, type, pvz_id, acceptance_id)
 		VALUES ($1, $2, $3, $4, $5)

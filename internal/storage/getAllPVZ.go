@@ -4,15 +4,12 @@ import (
 	"avitopvz/internal/models"
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/gofrs/uuid"
 )
 
 func (db *AvitoDB) GetAllPVZ(ctx context.Context, listInfo models.GetAllPVZRequest) ([]models.PVZWithReceptions, error) {
-	log.Printf("GetAllPVZ: Starting with listInfo: %+v", listInfo)
-
 	pvzQuery := `
                 SELECT id, registration_date, city 
                 FROM pvz 
@@ -21,8 +18,7 @@ func (db *AvitoDB) GetAllPVZ(ctx context.Context, listInfo models.GetAllPVZReque
 
 	pvzRows, err := db.pool.Query(ctx, pvzQuery, listInfo.Limit, (listInfo.Page-1)*listInfo.Limit)
 	if err != nil {
-		log.Printf("GetAllPVZ: Error querying pvz: %v", err)
-		return nil, fmt.Errorf("failed to query pvz: %w", err)
+		return nil, fmt.Errorf("не удалось выполнить запрос к pvz: %w", err)
 	}
 	defer pvzRows.Close()
 
@@ -31,14 +27,12 @@ func (db *AvitoDB) GetAllPVZ(ctx context.Context, listInfo models.GetAllPVZReque
 	for pvzRows.Next() {
 		var pvz models.PVZ
 		if err := pvzRows.Scan(&pvz.ID, &pvz.RegistrationDate, &pvz.City); err != nil {
-			log.Printf("GetAllPVZ: Error scanning pvz: %v", err)
-			return nil, fmt.Errorf("failed to scan pvz: %w", err)
+			return nil, fmt.Errorf("не удалось сканировать pvz: %w", err)
 		}
 
 		receptions, err := db.getReceptionsForPVZ(ctx, pvz.ID, listInfo.StartDate, listInfo.EndDate)
 		if err != nil {
-			log.Printf("GetAllPVZ: Error getting receptions for pvz %s: %v", pvz.ID, err)
-			return nil, fmt.Errorf("failed to get receptions for pvz %s: %w", pvz.ID, err)
+			return nil, fmt.Errorf("не удалось получить приемки для pvz %s: %w", pvz.ID, err)
 		}
 
 		result = append(result, models.PVZWithReceptions{
@@ -48,17 +42,13 @@ func (db *AvitoDB) GetAllPVZ(ctx context.Context, listInfo models.GetAllPVZReque
 	}
 
 	if err := pvzRows.Err(); err != nil {
-		log.Printf("GetAllPVZ: Error iterating pvz rows: %v", err)
-		return nil, fmt.Errorf("error in pvz rows: %w", err)
+		return nil, fmt.Errorf("ошибка в строках pvz: %w", err)
 	}
 
-	log.Printf("GetAllPVZ: Result: %+v", result)
 	return result, nil
 }
 
 func (db *AvitoDB) getReceptionsForPVZ(ctx context.Context, pvzID uuid.UUID, startDate, endDate time.Time) ([]models.ReceptionWithProducts, error) {
-	log.Printf("getReceptionsForPVZ: pvzID: %s, startDate: %s, endDate: %s", pvzID, startDate, endDate)
-
 	receptionQuery := `
                 SELECT id, date_time, pvz_id, status 
                 FROM acceptances 
@@ -66,8 +56,7 @@ func (db *AvitoDB) getReceptionsForPVZ(ctx context.Context, pvzID uuid.UUID, sta
 
 	receptionRows, err := db.pool.Query(ctx, receptionQuery, pvzID, startDate, endDate)
 	if err != nil {
-		log.Printf("getReceptionsForPVZ: Error querying acceptances: %v", err)
-		return nil, fmt.Errorf("failed to query acceptances: %w", err)
+		return nil, fmt.Errorf("не удалось выполнить запрос к приемкам: %w", err)
 	}
 	defer receptionRows.Close()
 
@@ -76,14 +65,12 @@ func (db *AvitoDB) getReceptionsForPVZ(ctx context.Context, pvzID uuid.UUID, sta
 	for receptionRows.Next() {
 		var reception models.Receptions
 		if err := receptionRows.Scan(&reception.ID, &reception.DateTime, &reception.PVZID, &reception.Status); err != nil {
-			log.Printf("getReceptionsForPVZ: Error scanning acceptance: %v", err)
-			return nil, fmt.Errorf("failed to scan acceptance: %w", err)
+			return nil, fmt.Errorf("не удалось сканировать приемку: %w", err)
 		}
 
 		products, err := db.getProductsForReception(ctx, reception.ID)
 		if err != nil {
-			log.Printf("getReceptionsForPVZ: Error getting products for reception %s: %v", reception.ID, err) // Логирование ошибки
-			return nil, fmt.Errorf("failed to get products for reception %s: %w", reception.ID, err)
+			return nil, fmt.Errorf("не удалось получить продукты для приемки %s: %w", reception.ID, err)
 		}
 
 		receptions = append(receptions, models.ReceptionWithProducts{
@@ -93,17 +80,13 @@ func (db *AvitoDB) getReceptionsForPVZ(ctx context.Context, pvzID uuid.UUID, sta
 	}
 
 	if err := receptionRows.Err(); err != nil {
-		log.Printf("getReceptionsForPVZ: Error iterating reception rows: %v", err) // Логирование ошибки
-		return nil, fmt.Errorf("error in reception rows: %w", err)
+		return nil, fmt.Errorf("ошибка в строках приемки: %w", err)
 	}
 
-	log.Printf("getReceptionsForPVZ: Result: %+v", receptions) // Логирование результата
 	return receptions, nil
 }
 
 func (db *AvitoDB) getProductsForReception(ctx context.Context, receptionID uuid.UUID) ([]models.Product, error) {
-	log.Printf("getProductsForReception: receptionID: %s", receptionID)
-
 	productQuery := `
                 SELECT id, date_time, type, acceptance_id, pvz_id 
                 FROM products 
@@ -111,8 +94,7 @@ func (db *AvitoDB) getProductsForReception(ctx context.Context, receptionID uuid
 
 	productRows, err := db.pool.Query(ctx, productQuery, receptionID)
 	if err != nil {
-		log.Printf("getProductsForReception: Error querying products: %v", err)
-		return nil, fmt.Errorf("failed to query products: %w", err)
+		return nil, fmt.Errorf("не удалось выполнить запрос к продуктам: %w", err)
 	}
 	defer productRows.Close()
 
@@ -121,17 +103,14 @@ func (db *AvitoDB) getProductsForReception(ctx context.Context, receptionID uuid
 	for productRows.Next() {
 		var product models.Product
 		if err := productRows.Scan(&product.ID, &product.DateTime, &product.Type, &product.ReceptionsID, &product.PVZID); err != nil {
-			log.Printf("getProductsForReception: Error scanning product: %v", err)
-			return nil, fmt.Errorf("failed to scan product: %w", err)
+			return nil, fmt.Errorf("не удалось сканировать продукт: %w", err)
 		}
 		products = append(products, product)
 	}
 
 	if err := productRows.Err(); err != nil {
-		log.Printf("getProductsForReception: Error iterating product rows: %v", err)
-		return nil, fmt.Errorf("error in product rows: %w", err)
+		return nil, fmt.Errorf("ошибка в строках продукта: %w", err)
 	}
 
-	log.Printf("getProductsForReception: Result: %+v", products)
 	return products, nil
 }

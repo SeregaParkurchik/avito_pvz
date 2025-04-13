@@ -21,6 +21,7 @@ func InitRoutes(userHandler *api.UserHandler) *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	router.POST("/dummyLogin", userHandler.DummyLogin)
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)
 

@@ -46,3 +46,15 @@ make unit-test
 ```bash
 make test
 ```
+
+##Нагрузочное тестирование 
+Bombarding http://localhost:8080/dummyLogin for 10s using 1000 connection(s)
+[===========================================================================================] 10s
+Done!
+Statistics        Avg      Stdev        Max
+  Reqs/sec       998.71      71.77    1752.62
+  Latency      614.82us     2.16ms    64.97ms
+  HTTP codes:
+    1xx - 0, 2xx - 100000, 3xx - 0, 4xx - 0, 5xx - 0
+    others - 0
+  Throughput:   706.54KB/s
